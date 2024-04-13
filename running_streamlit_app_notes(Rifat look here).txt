@@ -1,0 +1,21 @@
+So basically what I have set up is a ngrok tunnel which you have to also run in another 
+terminally while running your stream lit application
+
+
+To run the streamlit application
+
+Run in the 1st terminal
+    "streamlit run main.py --server.port 8502"
+    
+Run these two commands in a second terminal 
+
+    "ngrok config add-authtoken 2ddSFTL73SePeg8xxIY1FX2fttD_5Y9VBvaxzFD8dhCT3hfHk"
+    
+    "ngrok http 8502"
+    
+    "ngrok config add-authtoken 2f0bmkKtdTU3HSeoE4abbA8SJIJ_3BdWSWyyjsrxneZtofrRr"   - Main-copy.py
+
+
+
+
+In future you can sign up and make an account in ngrok but for now you can use my auth token.
