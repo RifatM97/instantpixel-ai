@@ -37,7 +37,8 @@ def modify_yaml(custom_prompt: str, phrase, box, output_folder, bg_image=None):
     data['phrase'] = phrase  
     data['output_folder'] = output_folder
     if bg_image is not None:
-        data['image'] = os.path.basename(os.path.normpath(bg_image))
+        tmp_folder = 'generation_samples/temp_inpaint_im/'
+        data['image'] = os.path.join(tmp_folder, bg_image.name)
     
     # Save the changes
     with open("prompt.yaml", 'w') as file:
@@ -46,9 +47,9 @@ def modify_yaml(custom_prompt: str, phrase, box, output_folder, bg_image=None):
     print("YAML file modified successfully!")
 
 
-# col1, col2 = st.columns([0.2,0.8]) 
-# with col2:
-#     st.title("InstantPixel.AI Demo")
+col1, col2 = st.columns([0.2,0.8]) 
+with col2:
+    st.title("InstantPixel.AI Demo")
 # with col1:
 #     st.image("asset/final_logo.png", width=115)
 
@@ -175,10 +176,10 @@ except:
 with st.sidebar:
     new_size = (70, 70)
     # Load the image and resize it
-    # image = Image.open('asset/final_logo.png')
-    # image = image.resize(new_size)
-    image = cv2.imread('asset/final_logo.png')
-    image = cv2.resize(image, new_size)
+    image = PIL.Image.open('asset/final_logo.png')
+    image = image.resize(new_size)
+    # image = cv2.imread('asset/final_logo.png')
+    # image = cv2.resize(image, new_size)
 
     col1, col2 = st.columns(2)
 
@@ -253,11 +254,11 @@ with st.expander('# Chat with InstantPixel.AI'):
         )
 
         prompt_template = """
-        You are a creative design assistant helping users create image generation prompts for marketing campaigns.
+        You are a friently creative design assistant helping users create image generation prompts for marketing campaigns.
         When they user provides a scenario, you should provide a suggestion of a short and concise image generation 
         prompt based on the given scenario.
-        Act friendly; confirm with the user if they want to proceed with the prompt you provided. If they say yes, 
-        respond with only the prompt again.
+        Confirm with the user if they want to proceed with the prompt you provided. If they say yes, 
+        you must only respond with just the prompt again.
 
         """
         # scenario = "**[A fish laying on the desert]**"  # Replace with user input mechanism
@@ -288,7 +289,22 @@ with st.expander('# Chat with InstantPixel.AI'):
                     message_placeholder.write(full_response + '▌')
             # Write full message with placeholder
             message_placeholder.write(full_response)
-            
+         
+        # running GLIGEN if pressed on button
+        print("final_prompt:", full_response)
+        if bg_image is None:
+            if st.button('Generate Image', on_click=lambda: generate_image_gligen(full_response, phrase, bboxes)):
+                pass
+            show_output_image()
+
+        elif bg_image is not None:
+            if st.button('Generate Image', on_click=lambda: inpaint_image_gligen(full_response, phrase, bboxes, bg_image)):
+                pass
+            show_output_image()
+
+        # uploading generated image
+        
+        
 #### testing phase
 #            if full_response == "Thanks for using InstantPixel.AI!":
 #                print("is this running? ", full_response)
@@ -348,17 +364,15 @@ with st.expander('# Chat with InstantPixel.AI'):
             st.session_state.gemini_history,
             f'data/{st.session_state.chat_id}-gemini_messages',
         )
-    
-# running GLIGEN if pressed on button
-print("test2222222222 :",full_response)
+
 
 def generate_image_gligen(full_response, phrase, bboxes):
+    
     new_path = "/home/jupyter/InstantPixel/GLIGEN/"
     os.chdir(new_path)
 
     # remove old images from the folders
     os.system("rm -r generation_samples/final_output/*")
-    # os.system("rm -r generation_samples/temp_inpaint_im/*")
 
     # health check
     print("Executing GLIGEN code...")
@@ -371,17 +385,11 @@ def generate_image_gligen(full_response, phrase, bboxes):
     with st.spinner('Image Generation in Progress...'):
         os.system("python gligen_inference.py")
     st.success('Generation Completed!')
-    # messages.chat_message("assistant").write("Generation Completed!")
 
     # health check
     print("Generation Completed")
-
-    # uploading generated image
-    image_directory = 'generation_samples/final_output/'
-    image_path = os.path.join(image_directory, os.listdir(image_directory)[0])
-    st.image(image_path, caption='Generated Image')
     
-def inpaint_image_gligen(full_response, phrase, bboxes):
+def inpaint_image_gligen(full_response, phrase, bboxes, bg_image):
     
     new_path = "/home/jupyter/InstantPixel/GLIGEN/"
     os.chdir(new_path)
@@ -391,32 +399,36 @@ def inpaint_image_gligen(full_response, phrase, bboxes):
     
     # health check
     print("Executing GLIGEN code...")
-
-    print("test2333333333_inpaint :",full_response)
     
     # running inpainting model
     phrases = [phrase]
     output_folder = "final_output"
-    modify_yaml(full_response, phrases, bboxes, output_folder, bg_image_path)
+    modify_yaml(full_response, phrases, bboxes, output_folder, bg_image)
     with st.spinner('Image Generation in Progress...'):
         os.system("python gligen_inpaint_inference.py")
-        st.info('This is a purely informational message', icon="ℹ️")
     st.success('Generation Completed!')
     
-    # uploading generated image
-    image_directory = 'generation_samples/temp/'
-    image_path = os.path.join(image_directory, os.listdir(image_directory)[0])
-    st.image(image_path, caption='Generated Image')
+    # health check
+    print("Generation Completed")
     
     # empty temp bg image folder
     os.system("rm -r generation_samples/temp_inpaint_im/*")
     
 
-# generation model
-if bg_image is None:
-    if st.button('Generate Image', on_click=lambda: generate_image_gligen(full_response, phrase, bboxes)):
-        pass
-    
-elif bg_image is not None:
-    if st.button('Generate Image', on_click=lambda: inpaint_image_gligen(full_response, phrase, bboxes, bg_image)):
-        pass
+# # running GLIGEN if pressed on button
+# print("final_prompt:", full_response)
+# if bg_image is None:
+#     if st.button('Generate Image', on_click=lambda: generate_image_gligen(full_response, phrase, bboxes)):
+#         pass
+
+# elif bg_image is not None:
+#     if st.button('Generate Image', on_click=lambda: inpaint_image_gligen(full_response, phrase, bboxes, bg_image)):
+#         pass
+
+# uploading generated image
+def show_output_image():
+    new_path = "/home/jupyter/InstantPixel/GLIGEN/"
+    os.chdir(new_path)
+    image_directory = 'generation_samples/final_output/'
+    image_path = os.path.join(image_directory, os.listdir(image_directory)[0])
+    st.image(image_path, caption='Generated Image')
