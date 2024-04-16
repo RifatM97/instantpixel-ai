@@ -72,7 +72,7 @@ if bg_image:
     with open(bg_image_path, "wb") as f:
         f.write(bg_image.getvalue())
 
-        
+
 # Create a canvas component      
 with st.container(height=None, border=None):
 
@@ -111,48 +111,6 @@ with st.container(height=None, border=None):
 
     # Print the extracted values list
     print(bboxes)
-
-############# testing ##############
-
-# # Creating a chatbot for simple prompts
-# with st.sidebar:
-#     messages = st.container(height=300)
-#     if prompt := st.chat_input("You imagine, InstantPixel creates..."):
-#         messages.chat_message("user").write(prompt)
-#         messages.chat_message("assistant").write("Image Generation in Progress...")
-
-#         new_path = "/home/jupyter/InstantPixel/GLIGEN/"
-#         os.chdir(new_path)
-
-#         # remove old images from the folder 
-#         os.system("rm -r generation_samples/final_output/*")
-
-#         # running GLIGEN
-#         phrases = [phrase]
-#         output_folder = "final_output"
-#         modify_yaml(prompt, phrases, bboxes, output_folder)
-
-#         # health check
-#         print("Executing GLIGEN code...")
-
-#         if bg_image:
-#             with st.spinner('Image Generation in Progress...'):
-#                 # os.system("python gligen_inference.py")
-#                 st.info('This is a purely informational message', icon="ℹ️")
-#             st.success('Generation Completed!')
-#         else:
-#             with st.spinner('Image Generation in Progress...'):
-#                 os.system("python gligen_inference.py")
-#             st.success('Generation Completed!')
-#             messages.chat_message("assistant").write("Generation Completed!")
-
-#        # health check
-#         print("Generation Completed")
-
-#         # uploading generated image
-#         image_directory = 'generation_samples/final_output/'
-#         image_path = os.path.join(image_directory, os.listdir(image_directory)[0])
-#         st.image(image_path, caption='Generated Image')
 
 
 # Setting up chat interface
@@ -196,7 +154,7 @@ with st.sidebar:
 
 # creating Gemini chat component 
 with st.container(height=None, border=True):
-    full_response = ''
+    
     with st.expander('# Chat with InstantPixel.AI'):
         st.write('## InstantPixel.AI')
 
@@ -215,11 +173,10 @@ with st.container(height=None, border=True):
             print('new_cache made')
 
         st.session_state.model = GenerativeModel("gemini-1.0-pro-vision")
-        st.session_state.chat = st.session_state.model.start_chat(
-            history=st.session_state.gemini_history,
-        )
-
-        print("sesssion chattttt ", st.session_state.chat)
+        # st.session_state.chat = st.session_state.model.start_chat(
+        #     history=st.session_state.gemini_history,
+        # )
+        
         # Display chat messages from history on app rerun
         for message in st.session_state.messages:
             with st.chat_message(
@@ -229,8 +186,12 @@ with st.container(height=None, border=True):
                 st.markdown(message['content'])
 
         # React to user input
-        
         if prompt := st.chat_input('Your message here...'):
+            
+            st.session_state.model = GenerativeModel("gemini-1.0-pro-vision")
+            # st.session_state.chat = st.session_state.model.start_chat(
+            #     history=st.session_state.gemini_history,
+            # )
             scenario = prompt
             # Save this as a chat for later
             if st.session_state.chat_id not in past_chats.keys():
@@ -247,53 +208,58 @@ with st.container(height=None, border=True):
                 )
             )
 
-            prompt_template = """
+#             prompt_template = """          
+#             You are a friendly creative design assistant helping users with only 2 tasks: 
+#             1. Create short and concise image generation prompts for marketing campaigns.
+#             2. Answer questions regarding the image provided by the user.
             
-            
-            You are a friendly creative design assistant helping users with only 2 tasks: 
-            1. Create short and concise image generation prompts for marketing campaigns.
-            2. Answer questions regarding the image provided by the user.
-            
-            If they user provides a scenario, you should provide a suggestion of a short and concise image generation 
-            prompt based on the given scenario.
-            Confirm with the user if they want to proceed with the prompt you provided. If they say yes, 
-            you must only respond with just the same prompt again without including any other information.
+#             If they user provides a scenario, you should provide a suggestion of a short and concise image generation 
+#             prompt based on the given scenario.
+#             Confirm with the user if they want to proceed with the prompt you provided.
        
-            """
-            # scenario = "**[A fish laying on the desert]**"  # Replace with user input mechanism
-            prompt_scene = prompt_template + scenario
-            # prompt_scene = scenario
+#             """
+           
+            prompt_scene = scenario
             
             # prompt and possible image
             temp_fld = '/home/jupyter/InstantPixel/GLIGEN/generation_samples/temp_inpaint_im/'
-            # contents = [os.path.join(temp_fld, bg_image.name), prompt] 
             contents = False
             if bg_image is not None:
                 contents = [Image.load_from_file(os.path.join(temp_fld, bg_image.name)), prompt_scene]
+                st.session_state.chat = st.session_state.model.start_chat(
+                history=st.session_state.gemini_history,
+                 )
             else:
                 contents = [prompt_scene]
-                
-            print("contentss :", contents)
+                st.session_state.chat = st.session_state.model.start_chat(
+                history=st.session_state.gemini_history,
+                 )
+            
             # Send message to AI
             # responses = st.session_state.chat.send_message(
             #     contents,
             #     stream=True,
             # )
-            responses = st.session_state.model.generate_content(
-                contents,
-                stream=True,
-            )
-            print("contentssss :", contents)
-            print("responseeee :", responses)
-            # Display assistant response in chat message container
+            # responses = st.session_state.chat.generate_content(
+            #     contents,
+            #     stream=True,
+            # )
+#             print("contentssss :", contents)
+#             print("responseeee :", responses)
+            # Display assistant response in chat message container 
             with st.chat_message(
                 name=MODEL_ROLE,
                 avatar=AI_AVATAR_ICON,
-            ):
+                ):
+                responses = st.session_state.chat.send_message(
+                contents,
+                stream=True,)
+            
                 message_placeholder = st.empty()
-               
+                full_response =''
+                
                 for response in responses:
-                    full_response += response.text
+                    full_response = response.text
                     # assistant_response = responses
                     # print("assistant", assistant_response)
                     # Streams in a chunk at a time
@@ -312,7 +278,6 @@ with st.container(height=None, border=True):
                 message_placeholder.write(full_response)
 
             # running GLIGEN if pressed on button
-            print("final_prompt:", full_response)
             if bg_image is None:
                 if st.button('Generate Image', on_click=lambda: generate_image_gligen(full_response, phrase, bboxes)):
                     pass
@@ -322,45 +287,6 @@ with st.container(height=None, border=True):
                 if st.button('Generate Image', on_click=lambda: inpaint_image_gligen(full_response, phrase, bboxes, bg_image)):
                     pass
                 # show_output_image()    
-
-    #### testing phase
-    #            if full_response == "Thanks for using InstantPixel.AI!":
-    #                print("is this running? ", full_response)
-    #                # running Gligen if button is pressed
-    #                st.button('Generate Image')
-    #                         new_path = "/home/jupyter/InstantPixel/GLIGEN/"
-    #                         os.chdir(new_path)
-
-    #                         # remove old images from the folder 
-    #                         os.system("rm -r generation_samples/final_output/*")
-
-    #                         # running GLIGEN
-    #                         phrases = [phrase]
-    #                         output_folder = "final_output"
-    #                         modify_yaml(full_response, phrases, bboxes, output_folder)
-
-    #                         # health check
-    #                         print("Executing GLIGEN code...")
-
-    #                         if bg_image:
-    #                             with st.spinner('Image Generation in Progress...'):
-    #                                 # os.system("python gligen_inference.py")
-    #                                 st.info('This is a purely informational message', icon="ℹ️")
-    #                             # st.success('Generation Completed!')
-    #                         else:
-    #                             with st.spinner('Image Generation in Progress...'):
-    #                                 os.system("python gligen_inference.py")
-    #                             st.success('Generation Completed!')
-    #                             # messages.chat_message("assistant").write("Generation Completed!")
-
-    #                        # health check
-    #                         print("Generation Completed")
-
-    #                         # uploading generated image
-    #                         image_directory = 'generation_samples/final_output/'
-    #                         image_path = os.path.join(image_directory, os.listdir(image_directory)[0])
-    #                         st.image(image_path, caption='Generated Image')
-
 
             # Add assistant response to chat history
             st.session_state.messages.append(
@@ -383,13 +309,13 @@ with st.container(height=None, border=True):
                 f'data/{st.session_state.chat_id}-gemini_messages',
             )
 
-        # uploading generated image
-        # show_output_image()
-        new_path = "/home/jupyter/InstantPixel/GLIGEN/"
-        os.chdir(new_path)
-        image_directory = 'generation_samples/final_output/'
-        image_path = os.path.join(image_directory, os.listdir(image_directory)[0])
-        st.image(image_path, caption='Generated Image')
+#         # uploading generated image
+#         # show_output_image()
+#         new_path = "/home/jupyter/InstantPixel/GLIGEN/"
+#         os.chdir(new_path)
+#         image_directory = 'generation_samples/final_output/'
+#         image_path = os.path.join(image_directory, os.listdir(image_directory)[0])
+#         st.image(image_path, caption='Generated Image')
 
 
 # uploading generated image
@@ -450,6 +376,87 @@ def inpaint_image_gligen(full_response, phrase, bboxes, bg_image):
 
     # empty temp bg image folder
     os.system("rm -r generation_samples/temp_inpaint_im/*")
+
+#     #### testing phase
+#     #            if full_response == "Thanks for using InstantPixel.AI!":
+#     #                print("is this running? ", full_response)
+#     #                # running Gligen if button is pressed
+#     #                st.button('Generate Image')
+#     #                         new_path = "/home/jupyter/InstantPixel/GLIGEN/"
+#     #                         os.chdir(new_path)
+
+#     #                         # remove old images from the folder 
+#     #                         os.system("rm -r generation_samples/final_output/*")
+
+#     #                         # running GLIGEN
+#     #                         phrases = [phrase]
+#     #                         output_folder = "final_output"
+#     #                         modify_yaml(full_response, phrases, bboxes, output_folder)
+
+#     #                         # health check
+#     #                         print("Executing GLIGEN code...")
+
+#     #                         if bg_image:
+#     #                             with st.spinner('Image Generation in Progress...'):
+#     #                                 # os.system("python gligen_inference.py")
+#     #                                 st.info('This is a purely informational message', icon="ℹ️")
+#     #                             # st.success('Generation Completed!')
+#     #                         else:
+#     #                             with st.spinner('Image Generation in Progress...'):
+#     #                                 os.system("python gligen_inference.py")
+#     #                             st.success('Generation Completed!')
+#     #                             # messages.chat_message("assistant").write("Generation Completed!")
+
+#     #                        # health check
+#     #                         print("Generation Completed")
+
+#     #                         # uploading generated image
+#     #                         image_directory = 'generation_samples/final_output/'
+#     #                         image_path = os.path.join(image_directory, os.listdir(image_directory)[0])
+#     #                         st.image(image_path, caption='Generated Image')
+
+
+# ############ testing ##############
+
+# # Creating a chatbot for simple prompts
+# with st.sidebar:
+#     messages = st.container(height=300)
+#     if prompt := st.chat_input("You imagine, InstantPixel creates..."):
+#         messages.chat_message("user").write(prompt)
+#         messages.chat_message("assistant").write("Image Generation in Progress...")
+
+#         new_path = "/home/jupyter/InstantPixel/GLIGEN/"
+#         os.chdir(new_path)
+
+#         # remove old images from the folder 
+#         os.system("rm -r generation_samples/final_output/*")
+
+#         # running GLIGEN
+#         phrases = [phrase]
+#         output_folder = "final_output"
+#         modify_yaml(prompt, phrases, bboxes, output_folder)
+
+#         # health check
+#         print("Executing GLIGEN code...")
+
+#         if bg_image:
+#             with st.spinner('Image Generation in Progress...'):
+#                 # os.system("python gligen_inference.py")
+#                 st.info('This is a purely informational message', icon="ℹ️")
+#             st.success('Generation Completed!')
+#         else:
+#             with st.spinner('Image Generation in Progress...'):
+#                 os.system("python gligen_inference.py")
+#             st.success('Generation Completed!')
+#             messages.chat_message("assistant").write("Generation Completed!")
+
+#        # health check
+#         print("Generation Completed")
+
+#         # uploading generated image
+#         image_directory = 'generation_samples/final_output/'
+#         image_path = os.path.join(image_directory, os.listdir(image_directory)[0])
+#         st.image(image_path, caption='Generated Image')
 
 
 
