@@ -1,0 +1,22 @@
+checkpoint_name: gligen_checkpoints/inpainting_pytorch_model.bin
+image: generation_samples/temp_inpaint_im/1-Copy3.png
+location:
+- - 0.748046875
+  - 0.70703125
+  - 0.83984375
+  - 0.8203125
+output_folder: final_output
+phrase:
+- bottle
+prompt: ' A bottle laying in the snow'
+checkpoint_name: gligen_checkpoints/inpainting_pytorch_model.bin
+image: generation_samples/temp_inpaint_im/1-Copy3.png
+location:
+- - 0.748046875
+  - 0.70703125
+  - 0.83984375
+  - 0.8203125
+output_folder: final_output
+phrase:
+- bottle
+prompt: ' A bottle laying in the snow'
